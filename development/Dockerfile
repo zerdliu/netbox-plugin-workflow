@@ -1,0 +1,43 @@
+
+ARG python_ver=3.9
+FROM python:${python_ver}
+
+ENV PYTHONUNBUFFERED 1
+
+RUN mkdir -p /opt
+
+RUN pip install --upgrade pip\
+  && pip install poetry
+
+# -------------------------------------------------------------------------------------
+# Install NetBox
+# -------------------------------------------------------------------------------------
+# Remove redis==3.4.1 from the requirements.txt file as a workaround to #4910
+# https://github.com/netbox-community/netbox/issues/4910, required for version 2.8.8 and earlier
+ARG netbox_ver=master
+#RUN git clone -v --single-branch --branch ${netbox_ver} http://github.com/netbox-community/netbox.git /opt/netbox/ && \
+RUN git clone -v --single-branch --branch ${netbox_ver} http://github.com.cnpmjs.org/netbox-community/netbox.git /opt/netbox/ && \
+    cd /opt/netbox/ && \
+    pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    sed -i '/^redis\=\=/d' /opt/netbox/requirements.txt && \
+    pip install -r /opt/netbox/requirements.txt
+
+# Make the django-debug-toolbar always visible when DEBUG is enabled,
+# except when we're running Django unit-tests.
+RUN echo "import sys" >> /opt/netbox/netbox/netbox/settings.py && \
+    echo "TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'" >> /opt/netbox/netbox/netbox/settings.py && \
+    echo "DEBUG_TOOLBAR_CONFIG = {'SHOW_TOOLBAR_CALLBACK': lambda _: DEBUG and not TESTING }" >> /opt/netbox/netbox/netbox/settings.py
+
+# Work around https://github.com/rq/django-rq/issues/421
+RUN pip install django-rq==2.3.2
+
+# -------------------------------------------------------------------------------------
+# Install Netbox Plugin
+# -------------------------------------------------------------------------------------
+RUN mkdir -p /source
+WORKDIR /source
+COPY . /source
+RUN poetry config virtualenvs.create false \
+  && poetry install --no-interaction --no-ansi
+
+WORKDIR /opt/netbox/netbox/
