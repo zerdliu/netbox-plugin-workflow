@@ -2,7 +2,7 @@ from extras.plugins import PluginConfig
 
 
 class Workflow(PluginConfig):
-    name = "workflow"
+    name = "netbox_workflow"
     verbose_name = "Workflow"
     description = "Workflow for Netbox"
     version = "0.1"
