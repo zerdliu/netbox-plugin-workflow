@@ -16,7 +16,7 @@ import os
 from invoke import task
 
 PYTHON_VER = os.getenv("PYTHON_VER", "3.9")
-NETBOX_VER = os.getenv("NETBOX_VER", "2.11.7")
+NETBOX_VER = os.getenv("NETBOX_VER", "v2.11.7")
 
 # Name of the docker image/container
 NAME = os.getenv("IMAGE_NAME", "netbox-plugin-workflow")
